@@ -82,12 +82,20 @@ def clean_frames(df_list):
 def reshape_df_for_sql(frame_list, column):
     '''takes a list of the base dataframes and subsets them and then joins 
     to the correct format to create a sql table'''
-    pass
+    frame_list = frame_list.copy()
+    for df in frame_list:
+            df_new = pd.DataFrame([df.date,df.column])
+            df.columns = ['date', df.symbol[0]]
+    return frame_list
 
 def join_df(framelist):
-    pass 
+    '''takes in a list of frames and left joins them all to one
+    joint dataframe with the rest to turn to sql table'''
+    pass
 
 def transform_to_august_returns(df):
+    '''takes in a dataframe with interday stock prices and calculates the percentage return for 
+    year till july for each stock'''
     df = df.copy()
     first_day_jan = ['2014-01-03', '2015-01-02', '2016-01-04', '2017-01-03', '2018-01-02', '2019-01-02']
     first_day_jul = ['2014-07-01', '2015-07-01', '2016-07-01', '2017-07-03', '2018-07-02', '2019-07-01']
