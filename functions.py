@@ -102,6 +102,6 @@ def transform_to_august_returns(df):
 
     august_returns_df = pd.DataFrame()
     for i in range(6):
-        august_returns_df[f'201{4+i}'] = 1 - (df.loc[first_day_jul[i]] / df.loc[first_day_jan[i]])
+        august_returns_df[f'201{4+i}'] = (df.loc[first_day_jul[i]] - df.loc[first_day_jan[i]]) / df.loc[first_day_jan[i]]
     return august_returns_df
 
