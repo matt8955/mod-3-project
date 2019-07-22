@@ -9,17 +9,18 @@ class scrape():
     fails = []
     success = []
     frame_list = []
+    merged_df = pd.DataFrame()
 
     def __init__(self, symbol):
         self.symbol = symbol.strip()
         scrape.symbols.append(self.symbol)
-        print (scrape.symbols)
         self.df = self.scrape_symbol()
         self.df = self.reformat_columns()
         self.df = self.typecast_df()
         self.df = self.rearrange_cols()
         self.df = self.date_to_column()
-        print('done')
+        self.close_df = self.closing_price()
+        scrape.frame_list.append(self.close_df)
 
     def scrape_symbol(self):
         '''takes in a list of stock symbols and scrapes their interday data
@@ -71,27 +72,34 @@ class scrape():
         self.df.columns = ['date'] + list(self.df.columns[1:]) #change name of index col to date
         return self.df
 
+    def closing_price(self):
+        '''augments the scraped dataframe to have date symbol and price'''
+        df_close = self.df[['date','close']]
+        df_close.columns = ['date', self.symbol]
+        return df_close
+
+    @classmethod
+    def merge_frames(cls):
+        df = scrape.frame_list[0]
+        for frame in scrape.frame_list[1:]:
+            df = df.merge(frame, on='date')
+        scrape.merged_df = df
+
+    @classmethod
+    def add_to_db(cls, table_name, engine):
+        '''adds frame to database'''
+        scrape.merged_df.to_sql(table_name, con=engine)
 
 
-#      #needs ALL THE WORK
-#     @classmethod    # figure out how the fuck i joined all the dataframes
-#     def reshape_df_for_sql(cls, frame_list, column):
-#         '''takes a list of the base dataframes and subsets them and then joins
-#         to the correct format to create a sql table'''
-#         frame_list = frame_list.copy()
-#         for df in frame_list:
-#                 df_new = pd.DataFrame([df.date,df.column])
-#                 df.columns = ['date', df.symbol[0].strip()]
-#         return frame_list
 
-# def transform_to_august_returns(df):
-#     '''takes in a dataframe with interday stock prices and calculates the percentage return for
-#      year till july for each stock'''
-#     df = df.copy()
-#     first_day_jan = ['2014-01-03', '2015-01-02', '2016-01-04', '2017-01-03', '2018-01-02', '2019-01-02']
-#     first_day_jul = ['2014-07-01', '2015-07-01', '2016-07-01', '2017-07-03', '2018-07-02', '2019-07-01']
+def transform_to_august_returns(df):
+    '''takes in a dataframe with interday stock prices and calculates the percentage return for
+     year till july for each stock'''
+    df = df.copy()
+    first_day_jan = ['2014-01-03', '2015-01-02', '2016-01-04', '2017-01-03', '2018-01-02', '2019-01-02']
+    first_day_jul = ['2014-07-01', '2015-07-01', '2016-07-01', '2017-07-03', '2018-07-02', '2019-07-01']
 
-#     august_returns_df = pd.DataFrame()
-#     for i in range(6):
-#         august_returns_df[f'201{4+i}'] = (df.loc[first_day_jul[i]] - df.loc[first_day_jan[i]]) / df.loc[first_day_jan[i]]
-#     return august_returns_df
+    august_returns_df = pd.DataFrame()
+    for i in range(6):
+        august_returns_df[f'201{4+i}'] = (df.loc[first_day_jul[i]] - df.loc[first_day_jan[i]]) / df.loc[first_day_jan[i]]
+    return august_returns_df
